@@ -2,7 +2,7 @@
  * @Author: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
  * @Date: 2023-10-27 13:05:03
  * @LastEditors: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
- * @LastEditTime: 2023-11-03 08:29:26
+ * @LastEditTime: 2023-11-04 11:25:00
  * @FilePath: \undefinedc:\Users\Administrator\Desktop\Finite State Machine.c
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -396,5 +396,3 @@ void MX_TIM2_Init(void) {
 (ray)[1] = ((val) & 0xFF) 
 
 
-#define B_PTR( var ) ( (byte *) (void *) &(var) )
-2#define W_PTR( var ) ( (word *) (void *) &(var) ) //把两个字节转化为一个Word 待定
