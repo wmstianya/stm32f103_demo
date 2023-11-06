@@ -2,7 +2,7 @@
  * @Author: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
  * @Date: 2023-10-27 13:05:03
  * @LastEditors: error: error: git config user.name & please set dead value or install git && error: git config user.email & please set dead value or install git & please set dead value or install git
- * @LastEditTime: 2023-11-04 11:25:00
+ * @LastEditTime: 2023-11-06 09:44:29
  * @FilePath: \undefinedc:\Users\Administrator\Desktop\Finite State Machine.c
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -390,9 +390,119 @@ void MX_TIM2_Init(void) {
 
 #define FLOPR( ray ) \
 ((ray)[0] * 256 + (ray)[1]) //把两个字节转化为一个Word
-// 把一个Word转化为两个字节
-#define FLOPW( ray, val ) \
-(ray)[0] = ((val) / 256); \
-(ray)[1] = ((val) & 0xFF) 
 
 
+
+#define FLG_UART 0x01
+#define FLG_TMR 0x02
+#define FLG_EXI 0x04
+#define FLG_KEY 0x08
+volatile INT8U g_u8EvntFlgGrp = 0; /*事件标志组*/
+INT8U read_envt_flg_grp(void);
+/***************************************
+*FuncName : main
+*Description : 主函数
+*Arguments : void
+*Return : void
+*****************************************/
+void main(void)
+{
+ INT8U u8FlgTmp = 0;
+ sys_init();
+ while(1)
+ {
+  u8FlgTmp = read_envt_flg_grp(); /*读取事件标志组*/
+  if(u8FlgTmp ) /*是否有事件发生？ */
+  {
+   if(u8FlgTmp & FLG_UART)
+   {
+    action_uart(); /*处理串口事件*/
+   }
+   if(u8FlgTmp & FLG_TMR)
+   {
+    action_tmr(); /*处理定时中断事件*/
+   }
+   if(u8FlgTmp & FLG_EXI)
+   {
+    action_exi(); /*处理外部中断事件*/
+   }
+   if(u8FlgTmp & FLG_KEY)
+   {
+    action_key(); /*处理击键事件*/
+   }
+  }
+  else
+  {
+   ;/*idle code*/
+  }
+ }
+}
+/*********************************************
+*FuncName : read_envt_flg_grp
+*Description : 读取事件标志组 g_u8EvntFlgGrp ，
+* 读取完毕后将其清零。
+*Arguments : void
+*Return : void
+*********************************************/
+INT8U read_envt_flg_grp(void)
+{
+ INT8U u8FlgTmp = 0;
+ gbl_int_disable();
+ u8FlgTmp = g_u8EvntFlgGrp; /*读取标志组*/
+ g_u8EvntFlgGrp = 0; /*清零标志组*/
+ gbl_int_enable();
+ return u8FlgTmp;
+}
+/*********************************************
+*FuncName : uart0_isr
+*Description : uart0 中断服务函数
+*Arguments : void
+*Return : void
+*********************************************/
+void uart0_isr(void)
+{
+ ......
+ push_uart_rcv_buf(new_rcvd_byte); /*新接收的字节存入缓冲区*/
+ gbl_int_disable();
+ g_u8EvntFlgGrp |= FLG_UART; /*设置 UART 事件标志*/
+ gbl_int_enable();
+ ......
+}
+/*********************************************
+*FuncName : tmr0_isr
+*Description : timer0 中断服务函数
+*Arguments : void
+*Return : void
+*********************************************/
+void tmr0_isr(void)
+{
+ INT8U u8KeyCode = 0;
+ ......
+ gbl_int_disable();
+ g_u8EvntFlgGrp |= FLG_TMR; /*设置 TMR 事件标志*/
+ gbl_int_enable();
+ ......
+ u8KeyCode = read_key(); /*读键盘*/
+ if(u8KeyCode) /*有击键操作？ */
+ {
+  push_key_buf(u8KeyCode); /*新键值存入缓冲区*/
+  gbl_int_disable();
+  g_u8EvntFlgGrp |= FLG_KEY; /*设置 TMR 事件标志*/
+  gbl_int_enable();
+ }
+ ......
+}
+/*********************************************
+*FuncName : exit0_isr
+*Description : exit0 中断服务函数
+*Arguments : void
+*Return : void
+*********************************************/
+void exit0_isr(void)
+{
+ ......
+ gbl_int_disable();
+ g_u8EvntFlgGrp |= FLG_EXI; /*设置 EXI 事件标志*/
+ gbl_int_enable();
+ ......
+}
