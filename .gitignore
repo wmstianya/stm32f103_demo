@@ -1,0 +1,39 @@
+# Keil / MDK build outputs
+OBJ/
+*.o
+*.d
+*.crf
+*.lnp
+*.dep
+*.htm
+*.map
+*.build_log.htm
+*.sct
+*.Bak
+*.lst
+*.hex
+*.axf
+*.elf
+
+# Keil user-specific UI state
+*.uvguix.*
+
+# J-Link / debug logs
+JLinkLog.txt
+*.jlink
+
+# Editor / OS
+.vscode/
+.idea/
+.history/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+
+# Backup temp files
+*~RF*.TMP
+
+# Understand-anything intermediate
+.understand-anything/intermediate/
+.understand-anything/tmp/
