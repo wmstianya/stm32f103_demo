@@ -735,6 +735,8 @@ void TIM4_IRQHandler(void)   //TIM4_____5ms中断
 					
 					sys_flag.Union_1_Sec = OK;
 					
+					sys_flag.Idle_AirRamp_1sFlag = OK;  //待机保风功率斜率控制节拍
+					
 					sys_flag.Pressure_1sFlag = OK;
 					sys_flag.Lcd_Unconnect_Time ++; //LCD未通信计时
 

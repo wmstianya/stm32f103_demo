@@ -483,6 +483,7 @@ void UART4_Server_Cmd_Analyse(void)
 
 										//在待机过程中，风机需要保持一定功率运行的启动信号
 										sys_flag.Idle_AirWork_Flag = U4_Inf.RX_Data[18];
+										sys_flag.Idle_AirPower = U4_Inf.RX_Data[17];  //待机保风目标功率(高字节，主机下发)
 										
 										if(sys_flag.Paiwu_Flag == 0)
 											{
