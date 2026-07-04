@@ -483,6 +483,7 @@ void UART4_Server_Cmd_Analyse(void)
 
 										//在待机过程中，风机需要保持一定功率运行的启动信号
 										sys_flag.Idle_AirWork_Flag = U4_Inf.RX_Data[18];
+										sys_flag.Idle_AirPower = U4_Inf.RX_Data[17];  //待机保风目标功率(高字节，主机下发)
 										
 										if(sys_flag.Paiwu_Flag == 0)
 											{
@@ -1026,7 +1027,7 @@ uint8 ModBus4RTU_Write0x10Function(uint8 Target_Address,uint16 Data_Address,uint
 		U4_Inf.TX_Data[15]= JiZu[Target_Address].Slave_D.Realys_Out >> 8;
 		U4_Inf.TX_Data[16]= JiZu[Target_Address].Slave_D.Realys_Out & 0x00FF;	//5 继电器16路控制，按位获取
 
-		U4_Inf.TX_Data[17]= 0;
+		U4_Inf.TX_Data[17]= SlaveG[Target_Address].Idle_AirPower;	//待机保风目标功率(取运行机组最大功率)
 		U4_Inf.TX_Data[18]= SlaveG[Target_Address].Idle_AirWork_Flag;	//6 风机待机启动信号
 
 		U4_Inf.TX_Data[19]= 0;

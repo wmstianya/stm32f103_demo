@@ -85,6 +85,7 @@ volatile	uint32 Rec_Count;	//主机接收标志
 
 
 			uint8 Idle_AirWork_Flag; //用于待机风机启动，以一定的功率长时间吹扫
+			uint8 Idle_AirPower; //待机保风目标功率(0-100)，取运行中机组的最大功率
 
 	uint8   ForceSend_Count;  //用于命令连发的次数
 

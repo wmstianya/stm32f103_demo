@@ -1937,6 +1937,29 @@ void  IDLE_Err_Response(void)
 
 
 /**
+ * @brief  待机保风功率斜率逼近：把当前功率朝目标功率移动一步(每秒调用一次)
+ * @param  currentPower 当前已施加的功率百分比(0-100)
+ * @param  targetPower  目标功率百分比(0-100)
+ * @retval 逼近一步后的功率百分比，单次变化不超过 IDLE_AIR_RAMP_STEP_PERCENT
+ */
+static uint8 idleAirPowerRampStep(uint8 currentPower, uint8 targetPower)
+{
+	if(targetPower > currentPower)
+		{
+			if(targetPower - currentPower > IDLE_AIR_RAMP_STEP_PERCENT)
+				return currentPower + IDLE_AIR_RAMP_STEP_PERCENT;
+			return targetPower;
+		}
+	if(currentPower > targetPower)
+		{
+			if(currentPower - targetPower > IDLE_AIR_RAMP_STEP_PERCENT)
+				return currentPower - IDLE_AIR_RAMP_STEP_PERCENT;
+			return targetPower;
+		}
+	return targetPower;
+}
+
+/**
 * @brief  系统待机，关闭所有电机，等待启动命令，向服务器发送待机指令
 * @param   
   * @retval 无
@@ -1944,18 +1967,29 @@ void  IDLE_Err_Response(void)
 void System_Idel_Function(void)
 {
 	//1、	该关的全部关掉 
-		if(sys_flag.Idle_AirWork_Flag)
-			{
-				 
-				Send_Air_Open();
-				PWM_Adjust(60);  //2025年12月15日15:52:30 由 40 改成60
-			}
-		else
-			{
-				
-				Send_Air_Close();
-				PWM_Adjust(0);
-			}
+	//待机保风：目标功率跟随运行中机组的最大功率(sys_flag.Idle_AirPower)，
+	//并以 IDLE_AIR_RAMP_STEP_PERCENT 的斜率(每秒)平滑逼近，防止风机功率突变
+		{
+			static uint8 idleFanPower = 0;  //当前已施加的待机风机功率(0-100)
+			uint8 idleTargetPower = sys_flag.Idle_AirWork_Flag ? sys_flag.Idle_AirPower : 0;
+
+			if(sys_flag.Idle_AirRamp_1sFlag)  //每秒按斜率逼近一次
+				{
+					sys_flag.Idle_AirRamp_1sFlag = 0;
+					idleFanPower = idleAirPowerRampStep(idleFanPower, idleTargetPower);
+				}
+
+			if(idleFanPower > 0)
+				{
+					Send_Air_Open();
+					PWM_Adjust(idleFanPower);
+				}
+			else
+				{
+					Send_Air_Close();
+					PWM_Adjust(0);
+				}
+		}
 		
  		Dian_Huo_OFF();//控制点火继电器关闭
 		Send_Gas_Close();//燃气阀组关闭
@@ -4891,6 +4925,7 @@ static 	uint32 Min_Address = 0;
 
 	uint8 Min_Power = 30;  //最小功率是30%
 	uint16 Value_Buffer = 0;  //辅助变量
+	uint8 maxRunningPower = 0;  //运行中机组的最大功率，用于待机保风
 
 	
 
@@ -4919,6 +4954,7 @@ static 	uint32 Min_Address = 0;
 			
 		
 		All_Work_Power = 0;
+		maxRunningPower = 0;
 		Min_Address = 0;
 		Max_Address = 0;  //数据更新
 		Already_WorkNumbers = 0;
@@ -4989,6 +5025,8 @@ static 	uint32 Min_Address = 0;
 										{
 											Already_WorkNumbers ++;
 											WorkOk_Address[Already_WorkNumbers] = Address; //将在运行设备按顺序排好地址
+											if(JiZu[Address].Slave_D.Power > maxRunningPower)  //追踪运行中机组的最大功率
+												maxRunningPower = JiZu[Address].Slave_D.Power;
 
 											if(JiZu[Address].Slave_D.Flame )
 												{
@@ -5124,6 +5162,16 @@ static 	uint32 Min_Address = 0;
 		sys_flag.Device_ErrorNumbers = Device_ErrorNumbers; 
 
 		AUnionD.AliveOK_Numbers = AliveOk_Numbres;  //统计正常在线的数量，有故障的除外
+
+		//待机保风：把运行中机组的最大功率(带上下限保护)下发给各机组
+		if(maxRunningPower > IDLE_AIR_POWER_MAX_PERCENT)
+			maxRunningPower = IDLE_AIR_POWER_MAX_PERCENT;
+		if(maxRunningPower < IDLE_AIR_POWER_MIN_PERCENT)
+			maxRunningPower = IDLE_AIR_POWER_MIN_PERCENT;
+		for(Address = 1; Address <= 10; Address ++)
+			{
+				SlaveG[Address].Idle_AirPower = maxRunningPower;
+			}
 
 		if(AUnionD.UnionStartFlag == 1)
 		{
