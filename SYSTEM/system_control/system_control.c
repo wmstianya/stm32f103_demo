@@ -2042,6 +2042,8 @@ void System_All_Control()
 			{
 				//取个风机功率运行的时间，然后计数，用于点火过程中的吹扫时间控制
 				sys_flag.Work_1S_Flag = 0;
+				if(sys_flag.Ignition_Cooldown_Sec > 0)  //点火失败冷却计时，用于限流延后重试
+					sys_flag.Ignition_Cooldown_Sec --;
 				if(sys_data.Data_1FH > 0)
 					{
 						sys_flag.AirWork_Time++;
@@ -2510,6 +2512,10 @@ uint8  sys_start_cmd(void)
 				return 0 ;
 			}
 		
+		if(sys_flag.Ignition_Cooldown_Sec > 0)  //点火失败冷却期内，拒绝启动，延后重试
+			{
+				return 0;
+			}
 		 
 		if(sys_flag.Error_Code )
 			{
