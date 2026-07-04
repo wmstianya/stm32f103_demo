@@ -82,6 +82,7 @@
 #define Stop_Pressure_Set        100
 
 #define  Max_Ignition_Times    3  //最大点火次数
+#define  IGNITION_GRACE_WAIT_SEC   45  //点火失败宽限冷却秒数(30-60s可调)，仅联控非首启生效
 
 #define Max_Dian_Huo_Power   60  //最大点火功率
 
@@ -1077,6 +1078,9 @@ volatile	uint8 ADC_100msFlag;
 		uint8 last_blow_flag;//后吹扫执行标志，=1时表示正在执行后吹扫
 		uint8 freeze_protect_check_begin;//系统复位开机，等待1到2分钟，检测
 		uint8  Already_Work_On_Flag; //标志锅炉已经运行过，设标志
+		uint8 Ever_Burned_Flag; //本次上电是否已成功稳火过(0=首启,1=非首启)
+		uint8 Ignition_Grace_Used; //本轮点火宽限重试是否已用(每次成功燃烧后重新武装)
+		uint8 Ignition_Cooldown_Sec; //点火失败冷却剩余秒数(>0时拒绝启动,用于限流延后重试)
 
 		uint8 Manual_open_water_suplly_flag; //手动补水标志
 		 
