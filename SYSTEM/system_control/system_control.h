@@ -8,6 +8,10 @@
 #define OK  1
 #define FALSE  0
 
+#define IDLE_AIR_RAMP_STEP_PERCENT  20   //待机保风功率每秒最大变化量(%)
+#define IDLE_AIR_POWER_MAX_PERCENT  100  //待机保风功率上限(%)
+#define IDLE_AIR_POWER_MIN_PERCENT  0    //待机保风功率下限(%)，无运行机组时保持
+
 #define  NO_DEBUG 0  //NO_DEBUG = 0 时，表示调试状态, = 1时需输入激活码
 
 #define TURE_FLAG 1  //该标志为0时，不检测传感器如温度和压力，去除传感器报警
@@ -935,6 +939,7 @@ volatile	uint8 XB_WaterLow_Flag;
 
 	uint8 Union_1A_Sec;
 	uint8 Union_1_Sec;
+	uint8 Idle_AirRamp_1sFlag;  //待机保风功率斜率控制1秒节拍
 
 	uint8 Wifi_Lock_System;  //物联网远程锁机功能
 		uint16 wifi_Lock_Year;
@@ -1053,6 +1058,7 @@ volatile	uint8 ADC_100msFlag;
 		uint8 Begin_Check_Index; //用于开机检查跳转
 
 		uint8 Idle_AirWork_Flag;
+		uint8 Idle_AirPower;  //待机保风目标功率(0-100)，由主机下发
 		uint8 flame_state; //用于记录火焰的状态
 		uint8 AirPower_Need;
 		uint8 Target_Page;
