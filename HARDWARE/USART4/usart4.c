@@ -1026,7 +1026,7 @@ uint8 ModBus4RTU_Write0x10Function(uint8 Target_Address,uint16 Data_Address,uint
 		U4_Inf.TX_Data[15]= JiZu[Target_Address].Slave_D.Realys_Out >> 8;
 		U4_Inf.TX_Data[16]= JiZu[Target_Address].Slave_D.Realys_Out & 0x00FF;	//5 继电器16路控制，按位获取
 
-		U4_Inf.TX_Data[17]= 0;
+		U4_Inf.TX_Data[17]= SlaveG[Target_Address].Idle_AirPower;	//待机保风目标功率(取运行机组最大功率)
 		U4_Inf.TX_Data[18]= SlaveG[Target_Address].Idle_AirWork_Flag;	//6 风机待机启动信号
 
 		U4_Inf.TX_Data[19]= 0;
