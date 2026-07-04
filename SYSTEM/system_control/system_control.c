@@ -318,6 +318,49 @@ uint8 Before_Ignition_Prepare(void)
 						 
 }
 
+/* 点火本轮(3次)失败后的处置动作 */
+typedef enum
+{
+	ignitionFailGraceRetry = 0,  /* 落待机冷却，稍后重试，不报故障 */
+	ignitionFailAlarm      = 1   /* 立即报点火故障 E11 */
+}ignitionFailAction;
+
+/**
+  * @brief  判定点火(本轮3次)失败后的处置：宽限重试 还是 立即报故障
+  * @param  underUnion 是否处于联控状态(1=是)
+  * @param  everBurned 本次上电是否已成功稳火过(1=非首启)
+  * @param  graceUsed  本轮点火宽限是否已用(1=已用)
+  * @retval ignitionFailGraceRetry 或 ignitionFailAlarm
+  */
+static ignitionFailAction decideIgnitionFailAction(uint8 underUnion, uint8 everBurned, uint8 graceUsed)
+{
+	if(underUnion && everBurned && !graceUsed)  /* 联控 + 非首启 + 宽限未用 */
+		return ignitionFailGraceRetry;
+	return ignitionFailAlarm;                    /* 首启/单机/宽限已用：立即报故障 */
+}
+
+/**
+  * @brief  执行点火失败处置：可宽限则落待机冷却(不报故障)，否则立即报E11
+  * @param  无
+  * @retval 无
+  */
+static void handleIgnitionFailure(void)
+{
+	if(decideIgnitionFailAction((LCD4013X.DLCD.UnionControl_Flag == OK),
+	                            sys_flag.Ever_Burned_Flag,
+	                            sys_flag.Ignition_Grace_Used) == ignitionFailGraceRetry)
+		{
+			sys_flag.Ignition_Grace_Used   = OK;                       /* 消耗本轮宽限 */
+			sys_flag.Ignition_Cooldown_Sec = IGNITION_GRACE_WAIT_SEC;  /* 启动冷却限流 */
+			sys_close_cmd();  /* 安全停气+后吹扫+落待机；不设Error_Code，靠限流延后重试 */
+		}
+	else
+		{
+			sys_flag.Error_Code = Error11_DianHuo_Bad;  /* 立即报点火故障 */
+			Ignition_Index = 0;
+		}
+}
+
 /**
   * @brief  系统点火程序
 * @param   点火完成返回1，否则返回0
@@ -691,8 +734,7 @@ uint8  Sys_Ignition_Fun(void)
 				  					}
 								else
 									{
-										sys_flag.Error_Code = Error11_DianHuo_Bad;//系统报警标志
-										Ignition_Index = 0;
+										handleIgnitionFailure();  //本轮3次未点着：联控非首启→落待机冷却重试；否则报E11
 									}
 									
 							}
@@ -726,8 +768,7 @@ uint8  Sys_Ignition_Fun(void)
 									}
 								else
 									{
-										sys_flag.Error_Code = Error11_DianHuo_Bad;//系统报警标志
-										Ignition_Index = 0;
+										handleIgnitionFailure();  //本轮3次未点着：联控非首启→落待机冷却重试；否则报E11
 									}
 									
 						}
@@ -748,6 +789,8 @@ uint8  Sys_Ignition_Fun(void)
 	/**************************************跳转到第二阶段参数设置***START********************************************/
 							 sys_flag.Ignition_Count = 0;
 				
+							sys_flag.Ever_Burned_Flag = OK;   //本次上电已成功稳火，后续重启属非首启
+							sys_flag.Ignition_Grace_Used = 0; //成功燃烧后重新武装宽限
 							return 1;
 	/**************************************跳转到第二阶段参数设置***END********************************************/
 						}
